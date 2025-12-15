@@ -30,7 +30,7 @@ export default function WeeklyForecastCard({
             </span>
             <span>{day.condition}</span>
             <span className="font-semibold">
-              {day.maxTemp}° / {day.minTemp}°
+              {day.maxTemp}°C / {day.minTemp}°C
             </span>
           </li>
         ))}

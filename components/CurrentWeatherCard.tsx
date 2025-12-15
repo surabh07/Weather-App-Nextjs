@@ -54,7 +54,7 @@ export default function CurrentWeatherCard({
             Temperature
           </p>
           <p className="text-5xl md:text-6xl font-bold text-white mt-1">
-            {weather.current.temperature}°
+            {weather.current.temperature}°C
           </p>
         </div>
 
@@ -79,7 +79,7 @@ export default function CurrentWeatherCard({
           <InfoItem label="Sunset" value={weather.current.sunset} />
           <InfoItem
             label="Feels Like"
-            value={`${weather.current.feelsLike}°`}
+            value={`${weather.current.feelsLike}°C`}
           />
         </div>
       </div>
