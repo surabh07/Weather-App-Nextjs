@@ -1,7 +1,7 @@
+import Image from "next/image";
 import { getWeatherIcon } from "@/lib/weatherIcons";
 import Card from "./Card";
 import { WeatherData } from "@/types/weather";
-import Image from "next/image";
 
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
@@ -23,11 +23,15 @@ export default function CurrentWeatherCard({
 
   return (
     <Card>
-      {/* Header */}
+      {/* ================= HEADER ================= */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-5xl text-white-400">{weather.city}</p>
-          <p className="text-s text-gray-500">{weather.current.condition}</p>
+          <p className="text-3xl md:text-4xl lg:text-5xl font-medium text-white">
+            {weather.city}
+          </p>
+          <p className="text-sm text-gray-400 mt-1">
+            {weather.current.condition}
+          </p>
         </div>
 
         <button
@@ -37,52 +41,69 @@ export default function CurrentWeatherCard({
               : onAddFavourite(weather.city)
           }
           className="text-yellow-400 hover:scale-110 transition"
+          aria-label="Toggle favourite"
         >
           {isFavourite ? <StarIcon /> : <StarBorderIcon />}
         </button>
       </div>
 
-      <div className="mt-6 mb-10 flex items-center justify-between">
-        <div className="text-6xl font-bold text-white">
-          {weather.current.temperature}°
+      {/* ================= HERO ================= */}
+      <div className="mt-8 flex items-center justify-between">
+        <div>
+          <p className="text-[11px] uppercase tracking-widest text-gray-400">
+            Temperature
+          </p>
+          <p className="text-5xl md:text-6xl font-bold text-white mt-1">
+            {weather.current.temperature}°
+          </p>
         </div>
 
         <Image
           src={getWeatherIcon(weather.current.condition)}
           alt={weather.current.condition}
-          width={90}
-          height={90}
-          className="opacity-90"
+          width={64}
+          height={64}
+          className="md:w-[80px] md:h-[80px] opacity-90"
         />
       </div>
 
+      {/* ================= EXTRA INFO ================= */}
+      <div className="mt-8">
+        <p className="text-[11px] uppercase tracking-widest text-gray-400 mb-4">
+          Details
+        </p>
 
-      {/* Extra info */}
-      <div className="mt-20 grid grid-cols-4 gap-4 text-xs text-gray-400">
-        <div>
-          <p className="text-lg">Rain</p>
-          <p className="text-lg text-white">{weather.current.chanceOfRain}%</p>
-        </div>
-
-        <div>
-          <p className="text-lg">Sunrise</p>
-          <p className="text-lg text-white">{weather.current.sunrise}</p>
-        </div>
-
-        <div>
-          <p className="text-lg">Sunset</p>
-          <p className="text-lg text-white">{weather.current.sunset}</p>
-        </div>
-
-        <div>
-          <p className="text-lg text-white">
-            Feels like 
-          </p>
-          <p className="text-lg text-white">
-            {weather.current.feelsLike}°
-          </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <InfoItem label="Rain" value={`${weather.current.chanceOfRain}%`} />
+          <InfoItem label="Sunrise" value={weather.current.sunrise} />
+          <InfoItem label="Sunset" value={weather.current.sunset} />
+          <InfoItem
+            label="Feels Like"
+            value={`${weather.current.feelsLike}°`}
+          />
         </div>
       </div>
     </Card>
+  );
+}
+
+/* ================= SUB COMPONENT ================= */
+
+function InfoItem({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="bg-white/5 rounded-xl p-3">
+      <p className="text-[11px] uppercase tracking-widest text-gray-400">
+        {label}
+      </p>
+      <p className="mt-1 text-sm md:text-base font-medium text-white">
+        {value}
+      </p>
+    </div>
   );
 }

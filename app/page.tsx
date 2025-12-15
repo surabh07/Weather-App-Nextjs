@@ -84,7 +84,7 @@ export default function Home() {
     <AppShell>
       <Sidebar />
 
-      <main className="flex-1 p-6">
+      <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
         {/* SEARCH */}
         <SearchBar
           location={selectedCity}
