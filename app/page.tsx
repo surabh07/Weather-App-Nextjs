@@ -1,65 +1,159 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+
+import { useFavourites } from "@/hooks/useFavourites";
+import { fetchWeatherByCity } from "@/services/weatherService";
+import { reverseGeocode } from "@/services/geocodingService";
+import { WeatherData } from "@/types/weather";
+
+import AppShell from "@/components/AppShell";
+import Sidebar from "@/components/Sidebar";
+import LeftColumn from "@/components/LeftColumn";
+import RightColumn from "@/components/RightColumn";
+import SearchBar from "@/components/SearchBar";
+
+// ✅ Leaflet client-only
+const MapView = dynamic(
+  () => import("@/components/MapView"),
+  { ssr: false }
+);
 
 export default function Home() {
+  // ---------------- CITY + WEATHER ----------------
+  const [selectedCity, setSelectedCity] = useState("Vadodara");
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // ---------------- MAP ----------------
+  const [coordinates, setCoordinates] = useState({
+    lat: 40.4168,
+    lng: -3.7038,
+  });
+
+  const [mapLoading, setMapLoading] = useState(false);
+
+  // ---------------- FAVOURITES ----------------
+  const { favourites, addFavourite, removeFavourite } = useFavourites();
+
+  // ---------------- FETCH WEATHER ----------------
+  useEffect(() => {
+    if (!selectedCity.trim()) return;
+
+    async function loadWeather() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await fetchWeatherByCity(selectedCity);
+        setWeather(data);
+
+        setCoordinates({
+          lat: data.coordinates.lat,
+          lng: data.coordinates.lng,
+        });
+      } catch (err: any) {
+        setError(err.message || "Something went wrong");
+        setWeather(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadWeather();
+  }, [selectedCity]);
+
+  // ---------------- MAP CLICK HANDLER ----------------
+  const handleMapLocationChange = async (lat: number, lng: number) => {
+    try {
+      setMapLoading(true);
+      setCoordinates({ lat, lng });
+
+      const city = await reverseGeocode(lat, lng);
+      setSelectedCity(city);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setMapLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <AppShell>
+      <Sidebar />
+
+      <main className="flex-1 p-6">
+        {/* SEARCH */}
+        <SearchBar
+          location={selectedCity}
+          onLocationChange={setSelectedCity}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        {/* FAVOURITES */}
+        {favourites.length > 0 && (
+          <div className="mb-6 flex gap-3 flex-wrap">
+            {favourites.map((city) => (
+              <button
+                key={city}
+                onClick={() => setSelectedCity(city)}
+                className={`text-xs px-3 py-1 rounded-full 
+                  ${
+                    city === selectedCity
+                      ? "bg-blue-500 text-white"
+                      : "bg-[#1e293b] text-gray-300 hover:bg-[#334155]"
+                  }`}
+              >
+                {city}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {loading && <p className="text-gray-400">Loading weather...</p>}
+        {error && <p className="text-red-400">{error}</p>}
+
+        {weather && !loading && !error && (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <LeftColumn
+                  weather={weather}
+                  favourites={favourites}
+                  onAddFavourite={addFavourite}
+                  onRemoveFavourite={removeFavourite}
+                />
+              </div>
+
+              <div>
+                <RightColumn weather={weather} />
+              </div>
+            </div>
+
+            {/* MAP */}
+            <div className="mt-10">
+              <h2 className="mb-2 text-sm uppercase tracking-widest text-gray-400">
+                Location Map
+              </h2>
+
+              {mapLoading && (
+                <p className="text-xs text-gray-500 mb-2">
+                  Detecting location...
+                </p>
+              )}
+
+              <div className="h-[420px] rounded-2xl overflow-hidden bg-[#0f1724]">
+                <MapView
+                  lat={coordinates.lat}
+                  lng={coordinates.lng}
+                  onLocationChange={handleMapLocationChange}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </main>
-    </div>
+    </AppShell>
   );
 }
